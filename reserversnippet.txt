@@ -1,0 +1,161 @@
+"use client";
+
+import Link from "next/link";
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import * as yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { signIn } from "next-auth/react";
+let validationSchema = yup.object({
+  email: yup.string().required("Admission Number is required"),
+  password: yup.string().required("Password is required"),
+});
+
+const Login = () => {
+  const [message, setMessage] = useState();
+  const {
+    setError,
+    reset,
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(validationSchema),
+  });
+  const handleFormSubmit = async (data) => {
+    // event.preventDefault();
+    setMessage(null);
+    const url =
+      process.env.NEXT_PUBLIC_API_URL + "/api/v1/account/login/student/";
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        // Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      withCredentials: true,
+      body: JSON.stringify(data),
+    });
+    if (res.ok) {
+      const response = await res.json();
+      setMessage({
+        message: response?.message ?? "Login successfully",
+        status: "success",
+      });
+      reset();
+    } else {
+      const response = await res.json();
+      setMessage({
+        message: response?.message ?? "Login failed ",
+        status: response?.status,
+      });
+    }
+  };
+
+  return (
+    <div>
+      <p className="text-center py-10 text-orange-950 text-2xl font-extrabold">
+        LOGIN
+      </p>
+      <div className="max-w-3xl m-auto">
+        {message?.status === "error" ? (
+          <div className="text-sm text-red-500">{message?.message}</div>
+        ) : message?.status === "success" ? (
+          <div className="text-sm text-green-500">{message?.message}</div>
+        ) : null}
+
+        <form autoComplete="off" onSubmit={handleSubmit(handleFormSubmit)}>
+          <div className="mb-6">
+            <label
+              htmlFor="admission_number"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >
+              Admission Number
+            </label>
+            <input
+              type="text"
+              id="admission_number"
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              placeholder="28374645555228"
+              {...register("email")}
+            />
+            {errors.admission_number && (
+              <div className="text-sm text-red-500">
+                {errors.admission_number.message}
+              </div>
+            )}
+          </div>
+          <div className="mb-6">
+            <label
+              htmlFor="password"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              placeholder="........."
+              {...register("password")}
+            />
+            {errors.password && (
+              <div className="text-sm text-red-500">
+                {errors.password.message}
+              </div>
+            )}
+          </div>
+          <div className="flex items-start mb-6">
+            <p>
+              Don&lsquo;t have an account?{" "}
+              <Link href="register">
+                <span className="text-blue-500">Register</span>{" "}
+              </Link>
+            </p>
+          </div>
+          <button
+            type="submit"
+            className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+          >
+            Login
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default Login;
+
+
+
+//////////////// dashboard layout
+
+
+
+"use client";
+import { Inter } from "next/font/google";
+import "../globals.css";
+import { NavBar } from "../../components/NavBar";
+import { redirect, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+const inter = Inter({ subsets: ["latin"] });
+export default function RootLayout({ children }) {
+  const { data: session, status } = useSession();
+  console.log(session?.user?.name);
+  console.log(
+    status === "authenticated" ? "authenticated" : "not authenticated"
+  );
+  if (status !== "authenticated") {
+    redirect("login");
+  }
+
+  return (
+    <html lang="en">
+      <body className={inter.className}>
+        <NavBar />
+        {children}
+      </body>
+    </html>
+  )
+}
